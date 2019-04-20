@@ -12,6 +12,52 @@ from discord import Webhook
 from manager import SQLManager
 
 invite_compile = re.compile("(?:https?://)?discord(?:app\.com/invite|\.gg)/?[a-zA-Z0-9]+/?")
+contract_e = discord.Embed(title="すみどらちゃん|Sigma 利用規約", description="すみどらちゃんは、Discordのさらなる発展を目指してシステムです。\n"
+                                                                   "このシステムでは、サーバーの規定は反映されず、\n下記の利用規約が適応されます。", inline=False)
+contract_e.add_field(name="本規約について", value='この利用規約（以下，「本規約」といいます。）は，すみどらちゃんコミュニティチーム（以下，「当チーム」といいます。）\n'
+                                           'が提供するサービス"すみどらちゃん"(以下，「本サービス」といいます。）の利用条件を定めるものです。\n'
+                                           '利用ユーザーの皆さま（以下，「ユーザー」といいます。）には，本規約に従い本サービスをご利用いただきます。', inline=False)
+contract_e.add_field(name="第1条（適用）", value="本規約は，ユーザーと当チームとの間の本サービスの利用に関わる一切の関係に適用されるものとします。", inline=False)
+contract_e.add_field(name="第2条（権限について）", value="""Sigma|すみどらちゃん 開発者のすみどら#8923 (id:212513828641046529)は、
+本サービスの全ての権限を保有します。第3のkey「g」""", inline=False)
+contract_e.add_field(name="第3条（禁止事項）", value='''
+ユーザーは，本サービスの利用にあたり，以下の行為をしてはなりません。
+（1）法令または公序良俗に違反する行為
+（2）犯罪行為に関連する行為
+（3）当チームのサーバーまたはネットワークの機能を破壊したり，妨害したりする行為
+（4）当チームのサービスの運営を妨害するおそれのある行為
+（5）他のユーザーに関する個人情報等を収集または蓄積する行為
+（6）他のユーザーに成りすます行為
+（7）当チームのサービスに関連して，反社会的勢力に対して直接または間接に利益を供与する行為
+（8）当チーム，本サービスの他の利用者または第三者の知的財産権，肖像権，プライバシー，名誉その他の権利または利益を侵害する行為
+（9）過度に暴力的な表現，露骨な性的表現，人種，国籍，信条，性別，社会的身分，門地等による差別につながる表現，自殺，自傷行為，薬物乱用を誘引または助長する表現，その他反社会的な内容を含み他人に不快感を与える表現を，投稿または送信する行為
+（10）他のお客様に対する嫌がらせや誹謗中傷を目的とする行為，その他本サービスが予定している利用目的と異なる目的で本サービスを利用する行為
+（11）宗教活動または宗教団体への勧誘行為
+（12）その他，当チームが不適切と判断する行為
+（13) Discord利用規約に違反する行為
+ (14) discordのinviteを投稿する行為
+''', inline=False)
+contract_e.add_field(name="第4条（global chatについて）", value='''
+Global Chatでは、次のことをしてはいけません。
+(1)r18発言をする行為(ただしnsfw指定が必要なカテゴリーは除きます。)
+(2)淫夢発言をする行為
+(3)r18,r18g,淫夢画像を投稿する行為
+(4)他人を煽る行為
+(5)運営に対して反逆的な態度をとる行為
+(6)その他、運営が不適切と判断した行為
+''')
+contract_e.add_field(name="第5条（利用制限および登録抹消）", value='''
+当チームは以下の場合等には，事前の通知なく投稿データを削除し，ユーザーに対して本サービスの全部もしくは一部の利用を制限し、またはユーザーとしての登録を抹消することができるものとします。
+（1）本規約のいずれかの条項に違反した場合
+（2）当チームからの問い合わせその他の回答を求める連絡に対して7日間以上応答がない場合
+（3）その他，当チームが本サービスの利用を適当でないと判断した場合
+当チームは，当チームの運営行為によりユーザーに生じたいかなる損害についても、一切の責任を免責されるものとします。
+また、ユーザー様同士のトラブルにつきましては、自己責任による当事者同士の解決を基本とし、当チームは一切の責任を免責されるものとします。
+''')
+contract_e.add_field(name="利用規約への同意について", value="本サービスを使用している時点で、利用規約に同意したこととなります。", inline=False)
+contract_e.add_field(name="公式サーバー", value="https://discord.gg/fVsAjm9")
+contract_e.add_field(name="BOT招待", value="https://discordapp.com/api/oauth2/"
+                                         "authorize?client_id=437917527289364500&permissions=671410193&scope=bot")
 
 
 def save_ban_members(_list: list):
@@ -311,6 +357,11 @@ class MyClient(discord.Client):
             embed.add_field(name=">unban [ユーザーネーム or id]", value="banを解除します。", inline=False)
             embed.add_field(name=">banlist", value="banされているユーザーを表示します。", inline=False)
             await message.channel.send(embed=embed)
+        elif command == ">tos":
+            try:
+                await message.author.send(embed=contract_e)
+            except Exception:
+                pass
 
     def _do_cleanup(self):
         super()._do_cleanup()
