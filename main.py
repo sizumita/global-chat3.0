@@ -383,6 +383,8 @@ class MyClient(discord.Client):
             if not self.user_check(message) == 0:
                 return
             for c in self.get_all_channels():
+                if not isinstance(c, discord.TextChannel):
+                    continue
                 if c.name == "global-chat":
                     if c.id in self.channels.keys():
                         continue
