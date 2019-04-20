@@ -233,7 +233,10 @@ class MyClient(discord.Client):
 
                 webhook = await channel.create_webhook(name='global-chat')
         except Exception:
-            await channel.send(f"webhookの権限がありません！")
+            try:
+                await channel.send(f"webhookの権限がありません！")
+            except discord.Forbidden:
+                pass
             return
         self.webhooks[name][channel.id] = webhook.url
         self.channels[channel.id] = name
