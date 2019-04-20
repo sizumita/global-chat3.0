@@ -95,6 +95,9 @@ class MyClient(discord.Client):
         self.bans = load_ban_members()
         self.manager = SQLManager()
         self.channels = {}
+        self.connecting = 0
+        for key, value in self.webhooks.items():
+            self.connecting += len(value.keys())
         for key, value in self.webhooks.items():
             for k in list(value):
                 self.channels[k] = key
@@ -107,6 +110,13 @@ class MyClient(discord.Client):
             f"{message.author.mention}({message.author.name},{message.author.id})は{reason}ため、制限時間付きbanを受けました。制限時間は{times}分です。")
         await asyncio.sleep(times * 60)
         self.bans.remove(message.author.id)
+
+    async def set_pref(self):
+        await self.change_presence(activity=discord.Game(name=f">help | {self.connecting} channels"))
+
+    async def on_ready(self):
+        await self.set_pref()
+        await self.send_global_notice(text="すみどらちゃんが起動しました。", title="起動告知")
 
     def end(self):
         save_channel_webhook(self.webhooks)
@@ -206,25 +216,29 @@ class MyClient(discord.Client):
         return 3
 
     def check(self, message: discord.Message):
+        if message.author.id == 212513828641046529:
+            return True
         if message.author.id in self.bans:
             return False
         if message.author.bot:
             return False
         return True
 
-    async def add_channel_global(self, message: discord.Message, name):
-        webhooks = await message.channel.webhooks()
+    async def add_channel_global(self, channel: discord.TextChannel, guild: discord.Guild, name="global-chat"):
+        webhooks = await channel.webhooks()
         if webhooks:
             webhook = webhooks[0]
         else:
             try:
-                webhook = await message.channel.create_webhook(name='global-chat')
+                webhook = await channel.create_webhook(name='global-chat')
             except Exception:
-                await message.channel.send(f"{message.author.mention}, 権限がありません！")
+                await channel.send(f"webhookを作成する権限がありません！")
                 return
-        self.webhooks[name][message.channel.id] = webhook.url
-        self.channels[message.channel.id] = name
-        self.loop.create_task(self.send_global_notice(name, f"{message.guild.name} がコネクトしました。"))
+        self.webhooks[name][channel.id] = webhook.url
+        self.channels[channel.id] = name
+        self.loop.create_task(self.send_global_notice(name, f"{guild.name} がコネクトしました。"))
+        self.connecting += 1
+        await self.set_pref()
 
     def get_member_id_from_name(self, name):
         for member in self.get_all_members():
@@ -250,18 +264,19 @@ class MyClient(discord.Client):
         if command == ">connect":
             if not self.user_check(message) <= 2:
                 return
+            if message.channel.id in self.channels.keys():
+                return
             if not args:
-                if not message.channel.id in self.webhooks['global-chat']:
-                    self.loop.create_task(self.add_channel_global(message, "global-chat"))
+                self.loop.create_task(self.add_channel_global(message.channel, message.guild, "global-chat"))
 
             else:
                 if args[0] == "global-r18":
                     if not message.channel.is_nsfw():
                         await message.channel.send("NSFW指定をしてください。")
                         return
-                    self.loop.create_task(self.add_channel_global(message, "global-r18"))
+                    self.loop.create_task(self.add_channel_global(message.channel, message.guild, "global-r18"))
                 elif args[0] in self.webhooks.keys():
-                    self.loop.create_task(self.add_channel_global(message, args[0]))
+                    self.loop.create_task(self.add_channel_global(message.channel, message.guild, args[0]))
         elif command == ">disconnect":
             if not self.user_check(message) <= 2:
                 return
@@ -274,6 +289,7 @@ class MyClient(discord.Client):
                 return
             del self.webhooks[category][message.channel.id]
             del self.channels[message.channel.id]
+            self.connecting -= 1
             await message.channel.send("接続解除しました。")
 
         elif command == ">s":
@@ -362,6 +378,15 @@ class MyClient(discord.Client):
                 await message.author.send(embed=contract_e)
             except Exception:
                 pass
+
+        elif command == ">all":
+            if not self.user_check(message) == 0:
+                return
+            for c in self.get_all_channels():
+                if c.name == "global-chat":
+                    if c.id in self.channels.keys():
+                        continue
+                    await self.add_channel_global(c, c.guild, "global-chat")
 
     def _do_cleanup(self):
         super()._do_cleanup()
