@@ -14,12 +14,13 @@ class SQLManager:
     def __init__(self):
         self.db = "chat_data.db"
 
-    async def save(self, message, channel_id_list, message_id_list):
+    async def save(self, message, channel_id_list, message_id_list, content):
         text = ""
         for channel_id, message_id in zip(channel_id_list, message_id_list):
             text += f"{channel_id}:{message_id},"
         async with aiosqlite.connect(self.db) as db:
-            await db.execute('INSERT INTO chat VALUES(?,?,?,?)', (message.author.id, message.channel.id, message.id, text))
+            await db.execute('INSERT INTO chat VALUES(?,?,?,?,?)',
+                             (message.author.id, message.channel.id, message.id, text, content))
             await db.commit()
         return True
 
@@ -65,5 +66,9 @@ class SQLManager:
             message_id_list.append(int(x[1][1]))
         for channel_id, message_id in zip(channel_id_list, message_id_list):
             channel = client.get_channel(channel_id)
-            messages.append(await channel.fetch_message(message_id))
+            try:
+                m = await channel.fetch_message(message_id)
+            except discord.NotFound:
+                continue
+            messages.append(m)
         return messages

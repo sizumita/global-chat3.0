@@ -1,8 +1,5 @@
 """
 チャンネル保存はpickleで行く
-
-webhooks:
-    channel id: webhook
 """
 import asyncio
 import pickle
@@ -19,13 +16,13 @@ invite_compile = re.compile("(?:https?://)?discord(?:app\.com/invite|\.gg)/?[a-z
 
 def save_ban_members(_list: list):
     with open("ban.txt", "w") as f:
-        f.write(",".join(_list))
+        f.write(",".join([str(i) for i in _list]))
 
 
 def load_ban_members():
     try:
         with open("ban.txt", "r") as f:
-            return [int(i) for i in f.read().split(",")]
+            return [int(i) for i in f.read().split(",")[:-1]]
     except FileNotFoundError:
         return []
 
@@ -49,7 +46,7 @@ class MyClient(discord.Client):
     def __init__(self, **options):
         super().__init__(**options)
         self.webhooks = load_channel_webhook()
-        self.limit_bans = load_ban_members()
+        self.bans = load_ban_members()
         self.manager = SQLManager()
         self.channels = {}
         for key, value in self.webhooks.items():
@@ -57,10 +54,13 @@ class MyClient(discord.Client):
                 self.channels[k] = key
 
     async def limit_ban(self, message, times, reason):
-        self.limit_bans.append(message.author.id)
+        self.bans.append(message.author.id)
         await message.channel.send(f"{message.author.mention}, あなたは{reason}ため、制限時間付きbanを受けました。制限時間は{times}分です。")
+        user = self.get_user(212513828641046529)
+        await user.send(
+            f"{message.author.mention}({message.author.name},{message.author.id})は{reason}ため、制限時間付きbanを受けました。制限時間は{times}分です。")
         await asyncio.sleep(times * 60)
-        self.limit_bans.remove(message.author.id)
+        self.bans.remove(message.author.id)
 
     def end(self):
         save_channel_webhook(self.webhooks)
@@ -72,13 +72,20 @@ class MyClient(discord.Client):
         message_id_list = [message.id]
         channel_id_list = [message.channel.id]
         if re.search(invite_compile, message.content):
-            self.loop.create_task(self.limit_ban(message, 60, "招待を送信した"))
+            self.loop.create_task(self.limit_ban(message, 60, "招待を送信しようとした"))
             return
         if message.mention_everyone:
-            self.loop.create_task(self.limit_ban(message, 60, "everyoneメンションを送信した"))
+            self.loop.create_task(self.limit_ban(message, 60, "everyoneメンションを送信しようとした"))
             return
-
+        if len(content) > 1000:
+            self.loop.create_task(self.limit_ban(message, 60, "1000文字以上の文字を送信しようとした"))
+            return
         cat = ""
+        if message.attachments:
+            embed = discord.Embed()
+            embed.set_image(url=message.attachments[0].url)
+        else:
+            embed = None
         for key, value in self.webhooks.items():
             for k, v in value.items():
                 if k == channel.id:
@@ -97,17 +104,19 @@ class MyClient(discord.Client):
                             content=content,
                             username=author.name,
                             avatar_url=author.avatar_url,
-                            wait=True
+                            wait=True,
+                            embed=embed,
                         )
                         message_id_list.append(result.id)
                         channel_id_list.append(key)
                 except discord.errors.NotFound:
                     return
+
             self.loop.create_task(send(value))
         await asyncio.sleep(2)
-        await self.manager.save(message, channel_id_list, message_id_list)
+        await self.manager.save(message, channel_id_list, message_id_list, content)
 
-    async def send_global_notice(self, text, title="", mode="normal", **kwargs):
+    async def send_global_notice(self, name="global-chat", text="", title="", mode="normal", **kwargs):
         if mode == "normal":
             embed = discord.Embed(title=title if title else "お知らせ", description=text, color=0x00bfff)
 
@@ -121,6 +130,8 @@ class MyClient(discord.Client):
                     embed.add_field(name=str(x), value=value)
 
         for channel, webhooks in self.webhooks.items():
+            if channel != name:
+                continue
             for _id, webhook in webhooks.items():
                 async def send(webhook_url):
                     try:
@@ -131,6 +142,7 @@ class MyClient(discord.Client):
                                 username=self.user.name,
                                 avatar_url=self.user.avatar_url,
                                 embed=embed,
+
                             )
                     except discord.errors.NotFound:
                         return
@@ -148,7 +160,7 @@ class MyClient(discord.Client):
         return 3
 
     def check(self, message: discord.Message):
-        if message.author.id in self.limit_bans:
+        if message.author.id in self.bans:
             return False
         if message.author.bot:
             return False
@@ -166,7 +178,7 @@ class MyClient(discord.Client):
                 return
         self.webhooks[name][message.channel.id] = webhook.url
         self.channels[message.channel.id] = name
-        self.loop.create_task(self.send_global_notice(f"{message.guild.name} がコネクトしました。"))
+        self.loop.create_task(self.send_global_notice(name, f"{message.guild.name} がコネクトしました。"))
 
     def get_member_id_from_name(self, name):
         for member in self.get_all_members():
@@ -215,6 +227,7 @@ class MyClient(discord.Client):
             if not category:
                 return
             del self.webhooks[category][message.channel.id]
+            del self.channels[message.channel.id]
             await message.channel.send("接続解除しました。")
 
         elif command == ">s":
@@ -249,19 +262,60 @@ class MyClient(discord.Client):
             _id = self.get_member_id_from_name(args[0])
             await message.channel.send(_id)
         elif command == ">ban":
+            if not self.user_check(message) == 0:
+                return
             if not args:
                 return
             try:
                 _id = int(args[0])
             except ValueError:
                 _id = self.get_member_id_from_name(args[0])
-            self.limit_bans.append(_id)
+            self.bans.append(_id)
             await message.channel.send("追加しました。")
+        elif command == ">unban":
+            if not self.user_check(message) == 0:
+                return
+            if not args:
+                return
+            try:
+                _id = int(args[0])
+            except ValueError:
+                _id = self.get_member_id_from_name(args[0])
+            if not _id in self.bans:
+                await message.channel.send("いません")
+                return
+            await message.channel.send("削除しました。")
+        elif command == ">banlist":
+            if not self.user_check(message) == 0:
+                return
+            text = "```\n"
+            for _id in self.bans:
+                u = self.get_user(_id)
+                text += f"{u.name}({u.id})\n"
+            text += "```"
+            await message.channel.send(text)
+        elif command == ">help":
+            embed = discord.Embed(title="Global Chat 3.0 for Discord", description="製作者: すみどら#8923", color=0x00ff00)
+            embed.add_field(name=">tos", value="Terms of service(利用規約)をDMに送信します。", inline=False)
+            embed.add_field(name=">get [ユーザー名]", value="名前からユーザーidを取得します。", inline=False)
+            embed.add_field(name=">s [メッセージid]", value="global chatに送信されたメッセージを取得します。", inline=False)
+            embed.add_field(name=">connect", value="コネクトします。チャンネル管理の権限が必要です。", inline=False)
+            embed.add_field(name=">connect [カテゴリーネーム]",
+                            value="指定したカテゴリーのチャンネルにコネクトします。チャンネル管理の権限が必要です。\nカテゴリーは追加次第お知らせします。", inline=False)
+            embed.add_field(name=">disconnect", value="コネクト解除します。チャンネル管理の権限が必要です。", inline=False)
+            embed.add_field(name=">adminhelp", value="for すみどら", inline=False)
+            await message.channel.send(embed=embed)
+        elif command == ">adminhelp":
+            embed = discord.Embed(title="Global Chat 3.0 for Discord", description="製作者: すみどら#8923", color=0xff0000)
+            embed.add_field(name=">ban [ユーザーネーム or id]", value="無期限banします。", inline=False)
+            embed.add_field(name=">unban [ユーザーネーム or id]", value="banを解除します。", inline=False)
+            embed.add_field(name=">banlist", value="banされているユーザーを表示します。", inline=False)
+            await message.channel.send(embed=embed)
 
     def _do_cleanup(self):
         super()._do_cleanup()
         save_channel_webhook(self.webhooks)
-        save_ban_members(self.limit_bans)
+        save_ban_members(self.bans)
 
 
 client = MyClient()
