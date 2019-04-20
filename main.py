@@ -225,15 +225,16 @@ class MyClient(discord.Client):
         return True
 
     async def add_channel_global(self, channel: discord.TextChannel, guild: discord.Guild, name="global-chat"):
-        webhooks = await channel.webhooks()
-        if webhooks:
-            webhook = webhooks[0]
-        else:
-            try:
+        try:
+            webhooks = await channel.webhooks()
+            if webhooks:
+                webhook = webhooks[0]
+            else:
+
                 webhook = await channel.create_webhook(name='global-chat')
-            except Exception:
-                await channel.send(f"webhookを作成する権限がありません！")
-                return
+        except Exception:
+            await channel.send(f"webhookの権限がありません！")
+            return
         self.webhooks[name][channel.id] = webhook.url
         self.channels[channel.id] = name
         self.loop.create_task(self.send_global_notice(name, text=f"{guild.name} がコネクトしました。"))
