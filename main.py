@@ -236,7 +236,7 @@ class MyClient(discord.Client):
                 return
         self.webhooks[name][channel.id] = webhook.url
         self.channels[channel.id] = name
-        self.loop.create_task(self.send_global_notice(name, f"{guild.name} がコネクトしました。"))
+        self.loop.create_task(self.send_global_notice(name, text=f"{guild.name} がコネクトしました。"))
         self.connecting += 1
         await self.set_pref()
 
