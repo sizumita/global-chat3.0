@@ -172,9 +172,9 @@ class MyClient(discord.Client):
         await asyncio.sleep(2)
         await self.manager.save(message, channel_id_list, message_id_list, content)
 
-    async def send_global_notice(self, name="global-chat", text="", title="", mode="normal", **kwargs):
+    async def send_global_notice(self, name="global-chat", text="```\n```", title="お知らせ", mode="normal", **kwargs):
         if mode == "normal":
-            embed = discord.Embed(title=title if title else "お知らせ", description=text, color=0x00bfff)
+            embed = discord.Embed(title=title, description=text, color=0x00bfff)
 
         elif mode == "error":
             embed = discord.Embed(title=title if title else "エラー", description=text, color=0xff0000)
@@ -184,7 +184,6 @@ class MyClient(discord.Client):
             for value in kwargs['_list']:
                 for x in range(1, len(kwargs['_list'])):
                     embed.add_field(name=str(x), value=value)
-
         for channel, webhooks in self.webhooks.items():
             if channel != name:
                 continue
