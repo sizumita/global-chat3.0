@@ -155,7 +155,6 @@ class MyClient(discord.Client):
                 try:
                     async with aiohttp.ClientSession() as session:
                         webhook = Webhook.from_url(webhook_url, adapter=discord.AsyncWebhookAdapter(session))
-                        # webhook._adapter.store_user = webhook._adapter._store_user
                         result = await webhook.send(
                             content=content,
                             username=author.name,
@@ -192,7 +191,6 @@ class MyClient(discord.Client):
                     try:
                         async with aiohttp.ClientSession() as session:
                             webhook = Webhook.from_url(webhook_url, adapter=discord.AsyncWebhookAdapter(session))
-                            # webhook._adapter.store_user = webhook._adapter._store_user
                             await webhook.send(
                                 username=self.user.name,
                                 avatar_url=self.user.avatar_url,
@@ -401,4 +399,4 @@ class MyClient(discord.Client):
 
 client = MyClient()
 
-client.run("NDM3OTE3NTI3Mjg5MzY0NTAw.XLrCIA.cuqcICWw8Ucvivk6ImHEkkjTZYc")
+client.run("")
