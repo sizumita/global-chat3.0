@@ -4,6 +4,7 @@
 import asyncio
 import pickle
 import re
+import sys
 
 import aiohttp
 import discord
@@ -12,14 +13,15 @@ from discord import Webhook
 from manager import SQLManager
 
 invite_compile = re.compile("(?:https?://)?discord(?:app\.com/invite|\.gg)/?[a-zA-Z0-9]+/?")
-contract_e = discord.Embed(title="すみどらちゃん|Sigma 利用規約", description="すみどらちゃんは、Discordのさらなる発展を目指してシステムです。\n"
-                                                                   "このシステムでは、サーバーの規定は反映されず、\n下記の利用規約が適応されます。", inline=False)
+contract_e = discord.Embed(title="すみどらちゃん|Sigma 利用規約", description="すみどらちゃんは、Discordのさらなる発展を目指して作られたシステムです。\n"
+                                                                   "このシステムでは、サーバーの規定は反映されず、\n下記の利用規約が適応されます。",
+                           inline=False)
 contract_e.add_field(name="本規約について", value='この利用規約（以下，「本規約」といいます。）は，すみどらちゃんコミュニティチーム（以下，「当チーム」といいます。）\n'
                                            'が提供するサービス"すみどらちゃん"(以下，「本サービス」といいます。）の利用条件を定めるものです。\n'
                                            '利用ユーザーの皆さま（以下，「ユーザー」といいます。）には，本規約に従い本サービスをご利用いただきます。', inline=False)
 contract_e.add_field(name="第1条（適用）", value="本規約は，ユーザーと当チームとの間の本サービスの利用に関わる一切の関係に適用されるものとします。", inline=False)
-contract_e.add_field(name="第2条（権限について）", value="""Sigma|すみどらちゃん 開発者のすみどら#8923 (id:212513828641046529)は、
-本サービスの全ての権限を保有します。第3のkey「g」""", inline=False)
+contract_e.add_field(name="第2条（権限について）", value="""すみどらちゃん 開発者のすみどら#8923 (id:212513828641046529)は、
+本サービスの全ての権限を保有します。""", inline=False)
 contract_e.add_field(name="第3条（禁止事項）", value='''
 ユーザーは，本サービスの利用にあたり，以下の行為をしてはなりません。
 （1）法令または公序良俗に違反する行為
@@ -40,11 +42,10 @@ contract_e.add_field(name="第3条（禁止事項）", value='''
 contract_e.add_field(name="第4条（global chatについて）", value='''
 Global Chatでは、次のことをしてはいけません。
 (1)r18発言をする行為(ただしnsfw指定が必要なカテゴリーは除きます。)
-(2)淫夢発言をする行為
-(3)r18,r18g,淫夢画像を投稿する行為
-(4)他人を煽る行為
-(5)運営に対して反逆的な態度をとる行為
-(6)その他、運営が不適切と判断した行為
+(2)r18,r18g画像を投稿する行為
+(3)他人を煽る行為
+(4)運営に対して反逆的な態度をとる行為
+(5)その他、運営が不適切と判断した行為
 ''')
 contract_e.add_field(name="第5条（利用制限および登録抹消）", value='''
 当チームは以下の場合等には，事前の通知なく投稿データを削除し，ユーザーに対して本サービスの全部もしくは一部の利用を制限し、またはユーザーとしての登録を抹消することができるものとします。
@@ -398,5 +399,4 @@ class MyClient(discord.Client):
 
 
 client = MyClient()
-
-client.run("")
+client.run(sys.argv[1])
