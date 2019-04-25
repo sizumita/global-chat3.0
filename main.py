@@ -11,7 +11,7 @@ import discord
 from discord import Webhook
 
 from manager import SQLManager
-
+V = "3.0.1"
 invite_compile = re.compile("(?:https?://)?discord(?:app\.com/invite|\.gg)/?[a-zA-Z0-9]+/?")
 reply_compile = re.compile("^:>([0-9]{18}).+")
 contract_e = discord.Embed(title="すみどらちゃん|Sigma 利用規約", description="すみどらちゃんは、Discordのさらなる発展を目指して作られたシステムです。\n"
@@ -397,8 +397,12 @@ class MyClient(discord.Client):
                 text += f"{u.name}({u.id})\n"
             text += "```"
             await message.channel.send(text)
+        elif command == ">notice":
+            desc = args[0]
+            del args[0]
+            await self.send_global_notice(text=desc, mode="update", name="更新情報", _list=args)
         elif command == ">help":
-            embed = discord.Embed(title="Global Chat 3.0 for Discord", description="製作者: すみどら#8923", color=0x00ff00)
+            embed = discord.Embed(title=f"Global Chat {V} for Discord", description="製作者: すみどら#8923", color=0x00ff00)
             embed.add_field(name=">tos", value="Terms of service(利用規約)をDMに送信します。", inline=False)
             embed.add_field(name=">get [ユーザー名]", value="名前からユーザーidを取得します。", inline=False)
             embed.add_field(name=">s [メッセージid]", value="global chatに送信されたメッセージを取得します。", inline=False)
@@ -413,6 +417,7 @@ class MyClient(discord.Client):
             embed.add_field(name=">ban [ユーザーネーム or id]", value="無期限banします。", inline=False)
             embed.add_field(name=">unban [ユーザーネーム or id]", value="banを解除します。", inline=False)
             embed.add_field(name=">banlist", value="banされているユーザーを表示します。", inline=False)
+            embed.add_field(name=">notice [description] <args>", value="おしらせします。", inline=False)
             await message.channel.send(embed=embed)
         elif command == ">tos":
             try:
