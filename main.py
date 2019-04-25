@@ -122,6 +122,7 @@ class MyClient(discord.Client):
 
     def end(self):
         save_channel_webhook(self.webhooks)
+        save_ban_members(self.bans)
 
     async def convert_message(self, message: discord.Message, embed: discord.Embed, content=""):
         """
