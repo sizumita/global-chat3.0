@@ -186,7 +186,7 @@ class MyClient(discord.Client):
                     async with aiohttp.ClientSession() as session:
                         if "reply" in settings.keys():
                             with open("test.txt", "a") as f:
-                                f.write(f"{key}::{settings['reply'].channel.id}:::{key == settings['reply'].channel.id}")
+                                f.write(f"{key}::{settings['reply'].channel.id}:::{key == settings['reply'].channel.id}\n")
                             if key == settings['reply'].channel.id:
                                 _content = f"{settings['reply'].author.mention}\n" + _content
                             else:
