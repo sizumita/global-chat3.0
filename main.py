@@ -130,10 +130,10 @@ class MyClient(discord.Client):
         :param embed:
         :return: content, embed, settings
         """
-        if not embed:
-            embed = discord.Embed()
         settings = {}
         if re.search(reply_compile, content):
+            if not embed:
+                embed = discord.Embed()
             _id = re.search(reply_compile, content).group(0)
             m = await self.manager.get_message_from_id(_id)
             settings['reply'] = m
