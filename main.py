@@ -177,16 +177,16 @@ class MyClient(discord.Client):
         if not content.startswith("*"):
             content, embed, settings = await self.convert_message(message, embed, content)
 
-        for key, value in self.webhooks[cat].items():
-            if message.channel.id == key:
+        for _key, value in self.webhooks[cat].items():
+            if message.channel.id == _key:
                 continue
 
-            async def send(webhook_url, _content, _key):
+            async def send(webhook_url, _content, key):
                 try:
                     async with aiohttp.ClientSession() as session:
                         webhook = Webhook.from_url(webhook_url, adapter=discord.AsyncWebhookAdapter(session))
                         if "reply" in settings.keys():
-                            if _key == settings['reply'].channel.id:
+                            if webhook.guild_id == settings['reply'].guild.id:
                                 _content = f"{settings['reply'].author.mention}\n" + _content
                             else:
                                 _content = f"@{settings['reply'].author.name}" + _content
@@ -203,7 +203,7 @@ class MyClient(discord.Client):
                 except discord.errors.NotFound:
                     return
 
-            self.loop.create_task(send(value, content, key))
+            self.loop.create_task(send(value, content, _key))
         await asyncio.sleep(2)
         await self.manager.save(message, channel_id_list, message_id_list, content)
 
