@@ -11,8 +11,9 @@ import discord
 
 
 class SQLManager:
-    def __init__(self):
+    def __init__(self, client: discord.Client):
         self.db = "chat_data.db"
+        self.client = client
 
     async def save(self, message, channel_id_list, message_id_list, content):
         text = ""
@@ -54,7 +55,7 @@ class SQLManager:
             return False, False
         return result_channel_id, result_message_id
 
-    async def get_messages(self, author_id, client: discord.Client):
+    async def get_messages(self, author_id):
         _list = await self.get_all_messages()
         channel_id_list = []
         message_id_list = []
@@ -65,10 +66,32 @@ class SQLManager:
             channel_id_list.append(int(x[1][0]))
             message_id_list.append(int(x[1][1]))
         for channel_id, message_id in zip(channel_id_list, message_id_list):
-            channel = client.get_channel(channel_id)
+            channel = self.client.get_channel(channel_id)
             try:
                 m = await channel.fetch_message(message_id)
             except discord.NotFound:
                 continue
             messages.append(m)
         return messages
+
+    async def get_message_from_id(self, _id):
+        """webhookのメッセージidリスト内に_idが入っていたら元のメッセージを返す"""
+        message = None
+        async with aiosqlite.connect(self.db) as db:
+            async with db.execute('SELECT * FROM chat') as cursor:
+                async for row in cursor:
+                    keys = row[3].split(",")
+                    for key in keys:
+                        if not key:
+                            continue
+                        channel_id, message_id = key.split(":")
+                        if int(message_id) == _id:
+                            try:
+                                channel = self.client.get_channel(int(channel_id))
+                                message = await channel.fetch_message(_id)
+                                break
+                            except Exception:
+                                return None
+                    if message:
+                        break
+        return message

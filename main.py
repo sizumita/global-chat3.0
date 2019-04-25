@@ -13,6 +13,7 @@ from discord import Webhook
 from manager import SQLManager
 
 invite_compile = re.compile("(?:https?://)?discord(?:app\.com/invite|\.gg)/?[a-zA-Z0-9]+/?")
+reply_compile = re.compile("^:>([0-9]{18}).+")
 contract_e = discord.Embed(title="すみどらちゃん|Sigma 利用規約", description="すみどらちゃんは、Discordのさらなる発展を目指して作られたシステムです。\n"
                                                                    "このシステムでは、サーバーの規定は反映されず、\n下記の利用規約が適応されます。",
                            inline=False)
@@ -94,7 +95,7 @@ class MyClient(discord.Client):
         super().__init__(**options)
         self.webhooks = load_channel_webhook()
         self.bans = load_ban_members()
-        self.manager = SQLManager()
+        self.manager = SQLManager(self)
         self.channels = {}
         self.connecting = 0
         for key, value in self.webhooks.items():
@@ -122,6 +123,24 @@ class MyClient(discord.Client):
     def end(self):
         save_channel_webhook(self.webhooks)
 
+    async def convert_message(self, message: discord.Message, embed: discord.Embed, content=""):
+        """
+        :param content:
+        :param message:
+        :param embed:
+        :return: content, embed, settings
+        """
+        settings = {}
+        if re.search(reply_compile, content):
+            _id = re.search(reply_compile, content).group(0)
+            m = await self.manager.get_message_from_id(_id)
+            settings['reply'] = m
+            content = content.replace(f":>{_id}", "")
+            embed.add_field(name="replay from", value=f"{m.content}")
+            embed.set_author(name=m.author.name, icon_url=m.author.avatar_url)
+            embed.timestamp = m.created_at
+        return content, embed, settings
+
     async def send_global_message(self, message: discord.Message, name):
         channel = message.channel
         author = message.author
@@ -148,6 +167,11 @@ class MyClient(discord.Client):
                 if k == channel.id:
                     cat = key
                     break
+
+        # ここから拡張機能処理
+        if not content.startswith("*"):
+            content, embed, settings = await self.convert_message(message, embed, content)
+
         for key, value in self.webhooks[cat].items():
             if message.channel.id == key:
                 continue
@@ -314,7 +338,7 @@ class MyClient(discord.Client):
             if not args:
                 return
             _id = self.get_member_id_from_name(args[0])
-            messages = await self.manager.get_messages(_id, self)
+            messages = await self.manager.get_messages(_id)
             for m in messages:
                 try:
                     await m.delete()
