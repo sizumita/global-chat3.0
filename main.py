@@ -187,7 +187,7 @@ class MyClient(discord.Client):
                     async with aiohttp.ClientSession() as session:
                         webhook = Webhook.from_url(webhook_url, adapter=discord.AsyncWebhookAdapter(session))
                         if "reply" in settings.keys():
-                            if int(key) == int(settings['reply'].guild.id):
+                            if int(key) == int(settings['reply'].channel.id):
                                 _content = f"{settings['reply'].author.mention}\n" + _content
                             else:
                                 _content = f"@{settings['reply'].author.name}" + _content
