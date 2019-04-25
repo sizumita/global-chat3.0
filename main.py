@@ -130,6 +130,8 @@ class MyClient(discord.Client):
         :param embed:
         :return: content, embed, settings
         """
+        if not embed:
+            embed = discord.Embed()
         settings = {}
         if re.search(reply_compile, content):
             _id = re.search(reply_compile, content).group(0)
