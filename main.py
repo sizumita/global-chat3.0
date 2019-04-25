@@ -181,12 +181,12 @@ class MyClient(discord.Client):
             if message.channel.id == key:
                 continue
 
-            async def send(webhook_url, _content):
+            async def send(webhook_url, _content, _key):
                 try:
                     async with aiohttp.ClientSession() as session:
                         webhook = Webhook.from_url(webhook_url, adapter=discord.AsyncWebhookAdapter(session))
                         if "reply" in settings.keys():
-                            if webhook.channel_id == settings['reply'].channel.id:
+                            if _key == settings['reply'].channel.id:
                                 _content = f"{settings['reply'].author.mention}\n" + _content
                             else:
                                 _content = f"@{settings['reply'].author.name}" + _content
@@ -203,7 +203,7 @@ class MyClient(discord.Client):
                 except discord.errors.NotFound:
                     return
 
-            self.loop.create_task(send(value, content))
+            self.loop.create_task(send(value, content, key))
         await asyncio.sleep(2)
         await self.manager.save(message, channel_id_list, message_id_list, content)
 
