@@ -184,15 +184,13 @@ class MyClient(discord.Client):
             async def send(webhook_url, _content):
                 try:
                     async with aiohttp.ClientSession() as session:
+                        webhook = Webhook.from_url(webhook_url, adapter=discord.AsyncWebhookAdapter(session))
                         if "reply" in settings.keys():
-                            with open("test.txt", "a") as f:
-                                f.write(f"{key}::{settings['reply'].channel.id}:::{key == settings['reply'].channel.id}\n")
-                            if key == settings['reply'].channel.id:
+                            if webhook.channel_id == settings['reply'].channel.id:
                                 _content = f"{settings['reply'].author.mention}\n" + _content
                             else:
                                 _content = f"@{settings['reply'].author.name}" + _content
 
-                        webhook = Webhook.from_url(webhook_url, adapter=discord.AsyncWebhookAdapter(session))
                         result = await webhook.send(
                             content=_content,
                             username=author.name,
