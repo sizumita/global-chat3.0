@@ -348,6 +348,9 @@ class MyClient(discord.Client):
             if not args:
                 return
             _id = self.get_member_id_from_name(args[0])
+            if not _id:
+                await message.channel.send("なし")
+                return
             await message.channel.send(_id)
         elif command == ">ban":
             if not self.user_check(message) == 0:
