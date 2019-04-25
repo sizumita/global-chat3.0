@@ -132,10 +132,12 @@ class MyClient(discord.Client):
         """
         settings = {}
         if re.search(reply_compile, content):
+            _id = re.search(reply_compile, content).groups()[0]
+            m = await self.manager.get_message_from_id(int(_id))
+            if not m:
+                return content, embed, settings
             if not embed:
                 embed = discord.Embed()
-            _id = re.search(reply_compile, content).group(0)
-            m = await self.manager.get_message_from_id(_id)
             settings['reply'] = m
             content = content.replace(f":>{_id}", "")
             embed.add_field(name="replay from", value=f"{m.content}")
@@ -147,6 +149,7 @@ class MyClient(discord.Client):
         channel = message.channel
         author = message.author
         content = message.clean_content
+        settings = {}
         message_id_list = [message.id]
         channel_id_list = [message.channel.id]
         if re.search(invite_compile, message.content):
@@ -178,12 +181,18 @@ class MyClient(discord.Client):
             if message.channel.id == key:
                 continue
 
-            async def send(webhook_url):
+            async def send(webhook_url, _content):
                 try:
                     async with aiohttp.ClientSession() as session:
+                        if "reply" in settings.keys():
+                            if key == settings['reply'].channel.id:
+                                _content = f"{settings['reply'].author.mention}\n" + _content
+                            else:
+                                _content = f"@{settings['reply'].author.name}" + _content
+
                         webhook = Webhook.from_url(webhook_url, adapter=discord.AsyncWebhookAdapter(session))
                         result = await webhook.send(
-                            content=content,
+                            content=_content,
                             username=author.name,
                             avatar_url=author.avatar_url,
                             wait=True,
@@ -194,7 +203,7 @@ class MyClient(discord.Client):
                 except discord.errors.NotFound:
                     return
 
-            self.loop.create_task(send(value))
+            self.loop.create_task(send(value, content))
         await asyncio.sleep(2)
         await self.manager.save(message, channel_id_list, message_id_list, content)
 

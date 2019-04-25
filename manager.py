@@ -87,8 +87,8 @@ class SQLManager:
                         channel_id, message_id = key.split(":")
                         if int(message_id) == _id:
                             try:
-                                channel = self.client.get_channel(int(channel_id))
-                                message = await channel.fetch_message(_id)
+                                channel = self.client.get_channel(int(row[1]))
+                                message = await channel.fetch_message(int(row[2]))
                                 break
                             except Exception:
                                 return None
