@@ -14,6 +14,7 @@ from manager import SQLManager
 V = "3.0.1"
 invite_compile = re.compile("(?:https?://)?discord(?:app\.com/invite|\.gg)/?[a-zA-Z0-9]+/?")
 reply_compile = re.compile("^:>([0-9]{18}).+")
+quote_compile = re.compile("^::>([0-9]{18}).+")
 contract_e = discord.Embed(title="すみどらちゃん|Sigma 利用規約", description="すみどらちゃんは、Discordのさらなる発展を目指して作られたシステムです。\n"
                                                                    "このシステムでは、サーバーの規定は反映されず、\n下記の利用規約が適応されます。",
                            inline=False)
@@ -140,8 +141,19 @@ class MyClient(discord.Client):
             if not embed:
                 embed = discord.Embed()
             settings['reply'] = m
-            content = content.replace(f":>{_id}", "")
+            content = content.replace(f":>{_id}", "`Reply`")
             embed.add_field(name="replay from", value=f"{m.content}")
+            embed.set_author(name=m.author.name, icon_url=m.author.avatar_url)
+            embed.timestamp = m.created_at
+        if re.search(quote_compile, content):
+            _id = re.search(quote_compile, content).groups()[0]
+            m = await self.manager.get_message_from_id(int(_id))
+            if not m:
+                return content, embed, settings
+            if not embed:
+                embed = discord.Embed()
+            content = content.replace(f"::>{_id}", "`Quote`")
+            embed.add_field(name="quote from", value=f"{m.content}")
             embed.set_author(name=m.author.name, icon_url=m.author.avatar_url)
             embed.timestamp = m.created_at
         return content, embed, settings
