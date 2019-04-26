@@ -124,13 +124,16 @@ class MyClient(discord.Client):
         async def typing(_channel):
             async with _channel.typing() as t:
                 await asyncio.sleep(5)
-                await t.__aexit__()
+                await t.__aexit__("", "", "")
 
         if channel.id in self.channels.keys():
             for ch in self.channels.keys():
                 if ch == channel.id:
                     continue
-                self.loop.create_task(typing(self.get_channel(ch)))
+                _ch = self.get_channel(ch)
+                if not _ch:
+                    continue
+                self.loop.create_task(typing(_ch))
 
     def end(self):
         save_channel_webhook(self.webhooks)
