@@ -120,6 +120,18 @@ class MyClient(discord.Client):
         await self.set_pref()
         await self.send_global_notice(text="すみどらちゃんが起動しました。", title="起動告知")
 
+    async def on_typing(self, channel, user, when):
+        async def typing(_channel):
+            async with _channel.typing() as t:
+                await asyncio.sleep(5)
+                await t.__aexit__()
+
+        if channel.id in self.channels.keys():
+            for ch in self.channels.keys():
+                if ch == channel.id:
+                    continue
+                self.loop.create_task(typing(self.get_channel(ch)))
+
     def end(self):
         save_channel_webhook(self.webhooks)
         save_ban_members(self.bans)
