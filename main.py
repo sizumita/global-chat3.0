@@ -358,7 +358,8 @@ class MyClient(discord.Client):
                 if not channel_id:
                     return
             except Exception:
-                raise
+                await message.channel.send("なし")
+                return
             channel = self.get_channel(channel_id)
             _message: discord.Message = await channel.fetch_message(message_id)
             embed = discord.Embed(title=f"id:{int(args[0])}のデータ", description=_message.content, color=0x00bfff,
