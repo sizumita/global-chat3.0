@@ -100,6 +100,7 @@ class MyClient(discord.Client):
         self.channels = {}
         self.connecting = 0
         self.debug = []
+        self.checking = []
         for key, value in self.webhooks.items():
             self.connecting += len(value.keys())
         for key, value in self.webhooks.items():
@@ -189,8 +190,9 @@ class MyClient(discord.Client):
 
         # ここから拡張機能処理
         if not content.startswith("*"):
-            content = content[1:]
             content, embed, settings = await self.convert_message(message, embed, content)
+        else:
+            content = content[1:]
 
         for _key, value in self.webhooks[cat].items():
             if message.channel.id == _key:
@@ -221,6 +223,8 @@ class MyClient(discord.Client):
             self.loop.create_task(send(value, content, _key))
         await asyncio.sleep(2)
         await self.manager.save(message, channel_id_list, message_id_list, content)
+        if message.guild.id in self.checking:
+            self.loop.create_task(self.sending_check(message))
 
         for _key, value in self.webhooks[cat].items():
             ch = self.get_channel(_key)
@@ -263,6 +267,11 @@ class MyClient(discord.Client):
 
                 self.loop.create_task(send(webhook))
         return
+
+    async def sending_check(self, message: discord.Message):
+        await message.add_reaction("\U0001f44c")
+        await asyncio.sleep(2)
+        await message.remove_reaction("\U0001f44c", message.guild.me)
 
     def user_check(self, message):
         if message.author.id == 212513828641046529:
@@ -408,6 +417,7 @@ class MyClient(discord.Client):
             if not _id in self.bans:
                 await message.channel.send("いません")
                 return
+            self.bans.remove(message.author.id)
             await message.channel.send("削除しました。")
         elif command == ">banlist":
             if not self.user_check(message) == 0:
@@ -432,6 +442,17 @@ class MyClient(discord.Client):
                 return
             self.debug.append(message.guild.id)
             await message.channel.send("デバッグ機能をオンにしました。")
+
+        elif command == ">checking":
+            if not self.user_check(message) <= 2:
+                return
+            if message.guild.id in self.checking:
+                await message.channel.send("送信チェック機能をオフにしました。")
+                self.checking.remove(message.guild.id)
+                return
+            await message.channel.send("送信チェック機能をオンにしました。")
+            self.checking.append(message.guild.id)
+            return
 
         elif command == ">help":
             embed = discord.Embed(title=f"Global Chat {V} for Discord", description="製作者: すみどら#8923", color=0x00ff00)
