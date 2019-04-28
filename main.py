@@ -271,15 +271,6 @@ class MyClient(discord.Client):
             return 2
         return 3
 
-    def check(self, message: discord.Message):
-        if message.author.id == 212513828641046529:
-            return True
-        if message.author.id in self.bans:
-            return False
-        if message.author.bot:
-            return False
-        return True
-
     async def add_channel_global(self, channel: discord.TextChannel, guild: discord.Guild, name="global-chat"):
         try:
             webhooks = await channel.webhooks()
@@ -303,11 +294,16 @@ class MyClient(discord.Client):
     def get_member_id_from_name(self, names):
         for member in self.get_all_members():
             if member.name == " ".join(names):
-                return member.id
+                return int(member.id)
 
     async def on_message(self, message: discord.Message):
-        if not self.check(message):
+        if message.author.id == 212513828641046529:
+            pass
+        if message.author.id in self.bans:
             return
+        if message.author.bot:
+            return
+
         if message.content.startswith(">"):
             await self.command(message)
             return
@@ -395,7 +391,7 @@ class MyClient(discord.Client):
             try:
                 _id = int(args[0])
             except ValueError:
-                _id = self.get_member_id_from_name(args[0])
+                _id = self.get_member_id_from_name()
             self.bans.append(_id)
             await message.channel.send("追加しました。")
         elif command == ">unban":
@@ -406,7 +402,7 @@ class MyClient(discord.Client):
             try:
                 _id = int(args[0])
             except ValueError:
-                _id = self.get_member_id_from_name(args[0])
+                _id = self.get_member_id_from_name(args)
             if not _id in self.bans:
                 await message.channel.send("いません")
                 return
