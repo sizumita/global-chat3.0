@@ -464,6 +464,7 @@ class MyClient(discord.Client):
                             value="指定したカテゴリーのチャンネルにコネクトします。チャンネル管理の権限が必要です。\nカテゴリーは追加次第お知らせします。", inline=False)
             embed.add_field(name=">disconnect", value="コネクト解除します。チャンネル管理の権限が必要です。", inline=False)
             embed.add_field(name=">debug", value="デバッグ機能をオンにします。もう一度実行するとオフになります。チャンネル管理の権限が必要です。", inline=False)
+            embed.add_field(name=">checking", value="送信チェック機能をオンにします。もう一度実行するとオフになります。チャンネル管理の権限が必要です。", inline=False)
             embed.add_field(name=">adminhelp", value="for すみどら", inline=False)
             await message.channel.send(embed=embed)
         elif command == ">adminhelp":
