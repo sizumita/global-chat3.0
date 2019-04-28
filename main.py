@@ -11,7 +11,7 @@ import discord
 from discord import Webhook
 
 from manager import SQLManager
-V = "3.0.1"
+V = "3.0.3"
 invite_compile = re.compile("(?:https?://)?discord(?:app\.com/invite|\.gg)/?[a-zA-Z0-9]+/?")
 reply_compile = re.compile("^:>([0-9]{18}).+")
 quote_compile = re.compile("^::>([0-9]{18}).+")
@@ -99,6 +99,7 @@ class MyClient(discord.Client):
         self.manager = SQLManager(self)
         self.channels = {}
         self.connecting = 0
+        self.debug = []
         for key, value in self.webhooks.items():
             self.connecting += len(value.keys())
         for key, value in self.webhooks.items():
@@ -180,14 +181,15 @@ class MyClient(discord.Client):
             embed.set_image(url=message.attachments[0].url)
         else:
             embed = None
-        for key, value in self.webhooks.items():
+        for key_, value in self.webhooks.items():
             for k, v in value.items():
                 if k == channel.id:
-                    cat = key
+                    cat = key_
                     break
 
         # ここから拡張機能処理
         if not content.startswith("*"):
+            content = content[1:]
             content, embed, settings = await self.convert_message(message, embed, content)
 
         for _key, value in self.webhooks[cat].items():
@@ -219,6 +221,14 @@ class MyClient(discord.Client):
             self.loop.create_task(send(value, content, _key))
         await asyncio.sleep(2)
         await self.manager.save(message, channel_id_list, message_id_list, content)
+
+        for _key, value in self.webhooks[cat].items():
+            ch = self.get_channel(_key)
+            if ch.guild.id in self.debug:
+                embed = discord.Embed(title="DEBUG", description=content, timestamp=message.created_at)
+                embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
+                embed.set_footer(text=message.guild.name, icon_url=message.guild.icon_url)
+                await ch.send(embed=embed)
 
     async def send_global_notice(self, name="global-chat", text="```\n```", title="お知らせ", mode="normal", **kwargs):
         if mode == "normal":
@@ -290,9 +300,9 @@ class MyClient(discord.Client):
         self.connecting += 1
         await self.set_pref()
 
-    def get_member_id_from_name(self, name):
+    def get_member_id_from_name(self, names):
         for member in self.get_all_members():
-            if member.name == name:
+            if member.name == " ".join(names):
                 return member.id
 
     async def on_message(self, message: discord.Message):
@@ -361,7 +371,7 @@ class MyClient(discord.Client):
                 return
             if not args:
                 return
-            _id = self.get_member_id_from_name(args[0])
+            _id = self.get_member_id_from_name(args)
             messages = await self.manager.get_messages(_id)
             for m in messages:
                 try:
@@ -371,7 +381,7 @@ class MyClient(discord.Client):
         elif command == ">get":
             if not args:
                 return
-            _id = self.get_member_id_from_name(args[0])
+            _id = self.get_member_id_from_name(args)
             if not _id:
                 await message.channel.send("なし")
                 return
@@ -413,6 +423,17 @@ class MyClient(discord.Client):
             desc = args[0]
             del args[0]
             await self.send_global_notice(text=desc, mode="update", name="更新情報", _list=args)
+
+        elif command == ">debug":
+            if not self.user_check(message) <= 2:
+                return
+            if message.guild.id in self.debug:
+                self.debug.remove(message.guild.id)
+                await message.channel.send("デバッグ機能をオフにしました。")
+                return
+            self.debug.append(message.guild.id)
+            await message.channel.send("デバッグ機能をオンにしました。")
+
         elif command == ">help":
             embed = discord.Embed(title=f"Global Chat {V} for Discord", description="製作者: すみどら#8923", color=0x00ff00)
             embed.add_field(name=">tos", value="Terms of service(利用規約)をDMに送信します。", inline=False)
@@ -422,6 +443,7 @@ class MyClient(discord.Client):
             embed.add_field(name=">connect [カテゴリーネーム]",
                             value="指定したカテゴリーのチャンネルにコネクトします。チャンネル管理の権限が必要です。\nカテゴリーは追加次第お知らせします。", inline=False)
             embed.add_field(name=">disconnect", value="コネクト解除します。チャンネル管理の権限が必要です。", inline=False)
+            embed.add_field(name=">debug", value="デバッグ機能をオンにします。もう一度実行するとオフになります。チャンネル管理の権限が必要です。", inline=False)
             embed.add_field(name=">adminhelp", value="for すみどら", inline=False)
             await message.channel.send(embed=embed)
         elif command == ">adminhelp":
