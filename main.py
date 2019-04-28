@@ -224,6 +224,8 @@ class MyClient(discord.Client):
 
         for _key, value in self.webhooks[cat].items():
             ch = self.get_channel(_key)
+            if not ch:
+                continue
             if ch.guild.id in self.debug:
                 embed = discord.Embed(title="DEBUG", description=content, timestamp=message.created_at)
                 embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
