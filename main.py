@@ -302,9 +302,9 @@ class MyClient(discord.Client):
         self.connecting += 1
         await self.set_pref()
 
-    def get_member_id_from_name(self, names):
+    def get_member_id_from_name(self, name):
         for member in self.get_all_members():
-            if member.name == " ".join(names):
+            if member.name == name:
                 return int(member.id)
 
     async def on_message(self, message: discord.Message):
@@ -389,7 +389,7 @@ class MyClient(discord.Client):
         elif command == ">get":
             if not args:
                 return
-            _id = self.get_member_id_from_name(args)
+            _id = self.get_member_id_from_name(args[0])
             if not _id:
                 await message.channel.send("なし")
                 return
@@ -402,7 +402,7 @@ class MyClient(discord.Client):
             try:
                 _id = int(args[0])
             except ValueError:
-                _id = self.get_member_id_from_name()
+                _id = self.get_member_id_from_name(args[0])
             self.bans.append(_id)
             await message.channel.send("追加しました。")
         elif command == ">unban":
@@ -413,7 +413,7 @@ class MyClient(discord.Client):
             try:
                 _id = int(args[0])
             except ValueError:
-                _id = self.get_member_id_from_name(args)
+                _id = self.get_member_id_from_name(args[0])
             if not _id in self.bans:
                 await message.channel.send("いません")
                 return
@@ -479,17 +479,6 @@ class MyClient(discord.Client):
                 await message.author.send(embed=contract_e)
             except Exception:
                 pass
-
-        elif command == ">all":
-            if not self.user_check(message) == 0:
-                return
-            for c in self.get_all_channels():
-                if not isinstance(c, discord.TextChannel):
-                    continue
-                if c.name == "global-chat":
-                    if c.id in self.channels.keys():
-                        continue
-                    await self.add_channel_global(c, c.guild, "global-chat")
 
     def _do_cleanup(self):
         super()._do_cleanup()
