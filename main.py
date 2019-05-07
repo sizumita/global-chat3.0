@@ -406,6 +406,7 @@ class MyClient(discord.Client):
             self.bans.append(_id)
             await message.channel.send("追加しました。")
         elif command == ">unban":
+            print(self.bans)
             if not self.user_check(message) == 0:
                 return
             if not args:
@@ -417,7 +418,6 @@ class MyClient(discord.Client):
             if not _id in self.bans:
                 await message.channel.send("いません")
                 return
-            print(self.bans)
             self.bans.remove(message.author.id)
             await message.channel.send("削除しました。")
         elif command == ">banlist":
