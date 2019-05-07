@@ -417,6 +417,7 @@ class MyClient(discord.Client):
             if not _id in self.bans:
                 await message.channel.send("いません")
                 return
+            print(self.bans)
             self.bans.remove(message.author.id)
             await message.channel.send("削除しました。")
         elif command == ">banlist":
