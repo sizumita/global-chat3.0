@@ -176,6 +176,9 @@ class MyClient(discord.Client):
         if len(content) > 1000:
             self.loop.create_task(self.limit_ban(message, 60, "1000文字以上の文字を送信しようとした"))
             return
+        if 'nake' in message.content:
+            self.loop.create_task(self.limit_ban(message, 60, "違法なコンテンツを投稿しようとした"))
+            return
         cat = ""
         if message.attachments:
             embed = discord.Embed()
@@ -420,6 +423,10 @@ class MyClient(discord.Client):
                 return
             self.bans.remove(message.author.id)
             await message.channel.send("削除しました。")
+        elif command == '>bans':
+            await message.channel.send(self.bans)
+            return
+
         elif command == ">banlist":
             if not self.user_check(message) == 0:
                 return
