@@ -433,6 +433,8 @@ class MyClient(discord.Client):
             text = "```\n"
             for _id in self.bans:
                 u = self.get_user(_id)
+                if not u:
+                    continue
                 text += f"{u.name}({u.id})\n"
             text += "```"
             await message.channel.send(text)
