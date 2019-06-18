@@ -440,6 +440,10 @@ class MyClient(discord.Client):
             desc = args[0]
             del args[0]
             await self.send_global_notice(text=desc, mode="update", name="更新情報", _list=args)
+        elif command == ">leave":
+            if not self.user_check(message) == 0:
+                return
+            await message.guild.leave()
 
         elif command == ">debug":
             if not self.user_check(message) <= 2:
@@ -481,6 +485,7 @@ class MyClient(discord.Client):
             embed.add_field(name=">unban [ユーザーネーム or id]", value="banを解除します。", inline=False)
             embed.add_field(name=">banlist", value="banされているユーザーを表示します。", inline=False)
             embed.add_field(name=">notice [description] <args>", value="おしらせします。", inline=False)
+            embed.add_field(name=">leave", value="去る。", inline=False)
             await message.channel.send(embed=embed)
         elif command == ">tos":
             try:
